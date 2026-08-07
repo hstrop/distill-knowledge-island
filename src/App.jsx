@@ -432,7 +432,16 @@ function ScrollProgress() {
   return <div className="scroll-progress" aria-hidden="true"><span ref={barRef} /></div>;
 }
 
-function Nav({ onSearch }) {
+const sectionMeta = {
+  hero: { title: "岛屿入口", copy: "从经历里留下真正值得重复使用的东西" },
+  shelf: { title: "个人收纳架", copy: "项目、想法、笔记与生活，各自归位" },
+  map: { title: "知识地图", copy: "六个观察分支，连接成同一个知识系统" },
+  notes: { title: "笔记档案", copy: "搜索、筛选，再打开一条可执行的结论" },
+  method: { title: "蒸馏方法", copy: "收集、压缩、连接，然后回到行动" },
+  about: { title: "关于这座岛", copy: "保持更新，也允许过去的结论被修正" },
+};
+
+function Nav({ onSearch, activeSection }) {
   const items = [
     ["收纳架", "shelf"],
     ["知识地图", "map"],
@@ -440,26 +449,41 @@ function Nav({ onSearch }) {
     ["蒸馏方法", "method"],
     ["关于", "about"],
   ];
+  const meta = sectionMeta[activeSection] ?? sectionMeta.hero;
 
   return (
-    <header className="floating-nav">
-      <button className="nav-brand" onClick={() => scrollTo("hero")} aria-label="返回首页">
-        <Mark />
-        <strong>DISTILL</strong>
-      </button>
-      <span className="nav-separator" />
-      <nav aria-label="主导航">
-        {items.map(([label, id]) => (
-          <button key={id} onClick={() => scrollTo(id)}>{label}</button>
-        ))}
-      </nav>
-      <span className="nav-separator last" />
-      <button className="nav-search" onClick={onSearch} aria-label="搜索笔记">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="11" cy="11" r="6" />
-          <path d="m16 16 4 4" />
-        </svg>
-      </button>
+    <header className={`floating-nav ${activeSection !== "hero" ? "is-expanded" : ""}`}>
+      <div className="nav-primary">
+        <button className="nav-brand" onClick={() => scrollTo("hero")} aria-label="返回首页">
+          <Mark />
+          <strong>DISTILL</strong>
+        </button>
+        <span className="nav-separator" />
+        <nav aria-label="主导航">
+          {items.map(([label, id]) => (
+            <button
+              className={activeSection === id ? "active" : ""}
+              key={id}
+              onClick={() => scrollTo(id)}
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
+        <span className="nav-separator last" />
+        <button className="nav-search" onClick={onSearch} aria-label="搜索笔记">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="11" cy="11" r="6" />
+            <path d="m16 16 4 4" />
+          </svg>
+        </button>
+      </div>
+      <div className="nav-context" aria-hidden={activeSection === "hero"}>
+        <div className="nav-context-copy" key={activeSection}>
+          <strong>{meta.title}</strong>
+          <span>{meta.copy}</span>
+        </div>
+      </div>
     </header>
   );
 }
@@ -469,28 +493,60 @@ function Hero() {
 
   const moveLight = (event) => {
     const bounds = event.currentTarget.getBoundingClientRect();
+    const x = (event.clientX - bounds.left) / bounds.width - 0.5;
+    const y = (event.clientY - bounds.top) / bounds.height - 0.5;
     islandRef.current?.style.setProperty("--mouse-x", `${event.clientX - bounds.left}px`);
     islandRef.current?.style.setProperty("--mouse-y", `${event.clientY - bounds.top}px`);
+    islandRef.current?.style.setProperty("--tilt-x", `${y * -5}deg`);
+    islandRef.current?.style.setProperty("--tilt-y", `${x * 7}deg`);
   };
+
+  const resetLight = () => {
+    islandRef.current?.style.setProperty("--tilt-x", "0deg");
+    islandRef.current?.style.setProperty("--tilt-y", "0deg");
+  };
+
+  useEffect(() => {
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const progress = Math.min(Math.max(window.scrollY / (window.innerHeight * 0.85), 0), 1);
+      islandRef.current?.style.setProperty("--hero-lift", `${progress * 34}px`);
+      islandRef.current?.style.setProperty("--hero-scale", String(1 - progress * 0.11));
+      islandRef.current?.style.setProperty("--hero-opacity", String(1 - progress * 0.48));
+    };
+    const onScroll = () => {
+      if (!frame) frame = window.requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, []);
 
   return (
     <section className="hero" id="hero">
       <div className="hero-glow" />
-      <div className="hero-island" ref={islandRef} onPointerMove={moveLight}>
-        <div className="hero-noise" />
-        <div className="hero-cursor" aria-hidden="true" />
-        <span className="hero-kicker">PERSONAL KNOWLEDGE ISLAND</span>
-        <h1>DISTILL</h1>
-        <p>蒸馏我自己 —— 把经历变成可以检索、验证和重复使用的知识。</p>
-        <div className="hero-actions">
-          <button className="light-button" onClick={() => scrollTo("shelf")}>
-            打开收纳架 <Arrow />
-          </button>
-          <button className="dark-button" onClick={() => scrollTo("method")}>查看系统</button>
+      <div className="hero-island-shell" ref={islandRef} onPointerMove={moveLight} onPointerLeave={resetLight}>
+        <div className="hero-halo" aria-hidden="true" />
+        <div className="hero-island">
+          <div className="hero-noise" />
+          <div className="hero-cursor" aria-hidden="true" />
+          <span className="hero-kicker">PERSONAL KNOWLEDGE ISLAND</span>
+          <h1>DISTILL</h1>
+          <p>蒸馏我自己 —— 把经历变成可以检索、验证和重复使用的知识。</p>
+          <div className="hero-actions">
+            <button className="light-button" onClick={() => scrollTo("shelf")}>
+              打开收纳架 <Arrow />
+            </button>
+            <button className="dark-button" onClick={() => scrollTo("method")}>查看系统</button>
+          </div>
+          <div className="hero-orbit orbit-a">学习闭环</div>
+          <div className="hero-orbit orbit-b">证据边界</div>
+          <div className="hero-orbit orbit-c">风险与决策</div>
         </div>
-        <div className="hero-orbit orbit-a">学习闭环</div>
-        <div className="hero-orbit orbit-b">证据边界</div>
-        <div className="hero-orbit orbit-c">风险与决策</div>
       </div>
       <button className="scroll-cue" onClick={() => scrollTo("map")}>
         <span>向下漫游</span>
@@ -500,7 +556,7 @@ function Hero() {
   );
 }
 
-function ContentShelf({ onOpen }) {
+function ContentShelf({ onOpen, isActive }) {
   const left = shelfItems.slice(0, 3);
   const right = shelfItems.slice(3);
   const renderCard = (item) => (
@@ -512,7 +568,7 @@ function ContentShelf({ onOpen }) {
   );
 
   return (
-    <section className="shelf-section" id="shelf">
+    <section className="shelf-section" id="shelf" data-active={isActive}>
       <SectionTitle
         eyebrow="PERSONAL STORAGE"
         title="把东西放进各自的盒子"
@@ -546,30 +602,45 @@ function SectionTitle({ eyebrow, title, copy, side }) {
   );
 }
 
-function KnowledgeMap({ onSelect }) {
+function KnowledgeMap({ onSelect, isActive }) {
+  const left = categories.slice(0, 3);
+  const right = categories.slice(3);
+  const renderCategory = (category, index) => (
+    <button
+      key={category.id}
+      className={`map-card ${category.accent}`}
+      style={{ "--stage-delay": `${index * 85}ms` }}
+      onClick={() => onSelect(category.id)}
+    >
+      <span className="map-index">{category.index}</span>
+      <div className="map-symbol"><i /><i /><i /></div>
+      <div className="map-copy">
+        <h3>{category.label}</h3>
+        <p>{category.description}</p>
+      </div>
+      <div className="map-meta">
+        <span>{categoryCount(category.id)} NOTES</span>
+        <Arrow />
+      </div>
+    </button>
+  );
+
   return (
-    <section className="section map-section" id="map">
+    <section className="section map-section" id="map" data-active={isActive}>
       <SectionTitle
         eyebrow="KNOWLEDGE BRANCHES"
         title="六个分支，同一个我"
         copy="不把知识锁死在文件夹里。每个分支都是一个观察视角，也可以与其他问题相连。"
         side={<span>06 BRANCHES / {notes.length} NOTES</span>}
       />
-      <div className="map-grid">
-        {categories.map((category, index) => (
-          <button key={category.id} className={`map-card ${category.accent}`} style={{ "--reveal-delay": `${index * 70}ms` }} onClick={() => onSelect(category.id)}>
-            <span className="map-index">{category.index}</span>
-            <div className="map-symbol"><i /><i /><i /></div>
-            <div className="map-copy">
-              <h3>{category.label}</h3>
-              <p>{category.description}</p>
-            </div>
-            <div className="map-meta">
-              <span>{categoryCount(category.id)} NOTES</span>
-              <Arrow />
-            </div>
-          </button>
-        ))}
+      <div className="map-stage">
+        <div className="map-rail map-rail-left">{left.map(renderCategory)}</div>
+        <div className="map-island" aria-hidden="true">
+          <span>06</span>
+          <i />
+          <small>BRANCHES</small>
+        </div>
+        <div className="map-rail map-rail-right">{right.map((category, index) => renderCategory(category, index + 3))}</div>
       </div>
     </section>
   );
@@ -819,6 +890,7 @@ function Footer() {
 }
 
 export default function App() {
+  const [activeSection, setActiveSection] = useState("hero");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [activeNote, setActiveNote] = useState(null);
   const [activeCollection, setActiveCollection] = useState(null);
@@ -841,11 +913,34 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    const ids = ["hero", "shelf", "map", "notes", "method", "about"];
+    let frame = 0;
+    const updateSection = () => {
+      frame = 0;
+      const probe = window.innerHeight * 0.38;
+      let current = "hero";
+      ids.forEach((id) => {
+        const element = document.getElementById(id);
+        if (element && element.getBoundingClientRect().top <= probe) current = id;
+      });
+      setActiveSection((previous) => previous === current ? previous : current);
+    };
+    const onScroll = () => {
+      if (!frame) frame = window.requestAnimationFrame(updateSection);
+    };
+    updateSection();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, []);
+
+  useEffect(() => {
     const selector = [
       ".section-title",
-      ".shelf-card",
-      ".shelf-core",
-      ".map-card",
       ".explorer-bar",
       ".filter-row",
       ".note-card-shell",
@@ -890,11 +985,11 @@ export default function App() {
   return (
     <>
       <ScrollProgress />
-      <Nav onSearch={focusSearch} />
+      <Nav onSearch={focusSearch} activeSection={activeSection} />
       <main>
         <Hero />
-        <ContentShelf onOpen={setActiveCollection} />
-        <KnowledgeMap onSelect={selectBranch} />
+        <ContentShelf onOpen={setActiveCollection} isActive={activeSection === "shelf"} />
+        <KnowledgeMap onSelect={selectBranch} isActive={activeSection === "map"} />
         <NotesExplorer selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory} onOpen={setActiveNote} searchRef={searchRef} />
         <Method />
         <NowPanel />
