@@ -312,8 +312,11 @@ const notes = [
 
 const categoryCount = (id) => notes.filter((note) => note.category === id).length;
 
+const yunqueRepositoryUrl = "https://github.com/hstrop/yunque-studio";
+const yunqueReleaseUrl = "https://github.com/hstrop/yunque-studio/releases/tag/v1.0.0";
+
 const shelfItems = [
-  { id: "projects", index: "01", title: "项目实验", label: "PROJECTS", copy: "做过、正在做、想验证的东西。", count: "03", accent: "blue" },
+  { id: "projects", index: "01", title: "项目实验", label: "PROJECTS", copy: "做过、正在做、想验证的东西。", count: "04", accent: "blue" },
   { id: "ideas", index: "02", title: "灵感想法", label: "IDEAS", copy: "还没有被做完，但值得留下的念头。", count: "08", accent: "peach" },
   { id: "notes", index: "03", title: "知识笔记", label: "NOTES", copy: "从经历里蒸馏出来的可复用结论。", count: String(notes.length).padStart(2, "0"), accent: "lilac" },
   { id: "captures", index: "04", title: "生活收集", label: "CAPTURES", copy: "身体、关系和日常里留下的信号。", count: "12", accent: "mint" },
@@ -323,10 +326,11 @@ const shelfItems = [
 
 const collectionDetails = {
   projects: {
-    eyebrow: "PROJECTS / 03",
+    eyebrow: "PROJECTS / 04",
     title: "项目实验",
     description: "我把项目当作验证想法的容器，记录问题、技术选择和交付证据。",
     items: [
+      ["云雀创作台", "Electron · Playwright · Flask", "把 Jimeng 与 Pippit 的批量生成任务、账号、素材和结果集中到一个 Windows 工作台。"],
       ["AI 技术文档知识岛", "RAG · Python · FastAPI", "把散落在 Confluence 和旧群聊里的技术文档接入检索问答。"],
       ["DISTILL 个人知识岛", "React · Vite · GitHub Pages", "把自己的知识、项目和想法整理成可漫游的公开空间。"],
       ["机器人小狗实践", "机器人控制 · 工程实践", "在比赛和工程实践中，记录从想法到演示的完整过程。"],
@@ -401,6 +405,14 @@ function Arrow({ down = false }) {
   );
 }
 
+function DownloadIcon() {
+  return (
+    <svg className="download-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 3v12m0 0 5-5m-5 5-5-5M5 20h14" />
+    </svg>
+  );
+}
+
 function scrollTo(id) {
   document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -435,6 +447,7 @@ function ScrollProgress() {
 const sectionMeta = {
   hero: { title: "岛屿入口", copy: "从经历里留下真正值得重复使用的东西" },
   shelf: { title: "个人收纳架", copy: "项目、想法、笔记与生活，各自归位" },
+  "project-yunque": { title: "云雀创作台", copy: "把批量 AI 创作流程做成可安装、可验证的桌面工具" },
   map: { title: "知识地图", copy: "六个观察分支，连接成同一个知识系统" },
   notes: { title: "笔记档案", copy: "搜索、筛选，再打开一条可执行的结论" },
   method: { title: "蒸馏方法", copy: "收集、压缩、连接，然后回到行动" },
@@ -444,6 +457,7 @@ const sectionMeta = {
 function Nav({ onSearch, activeSection }) {
   const items = [
     ["收纳架", "shelf"],
+    ["云雀项目", "project-yunque"],
     ["知识地图", "map"],
     ["全部笔记", "notes"],
     ["蒸馏方法", "method"],
@@ -584,6 +598,51 @@ function ContentShelf({ onOpen, isActive }) {
           <small>继续探索</small>
         </div>
         <div className="shelf-column">{right.map(renderCard)}</div>
+      </div>
+    </section>
+  );
+}
+
+function FeaturedProject() {
+  return (
+    <section className="featured-project" id="project-yunque">
+      <div className="featured-project-inner">
+        <div className="project-heading">
+          <div>
+            <span>FEATURED BUILD / 2026</span>
+            <h2>云雀创作台</h2>
+          </div>
+          <p>一个面向 Windows 的本地批量 AI 内容创作工作台，把 Jimeng 与 Pippit 的任务、账号、浏览器和生成结果放在同一个安静的操作界面里。</p>
+        </div>
+
+        <div className="project-showcase">
+          <figure className="project-shot">
+            <img src="./projects/yunque-studio.png" alt="云雀创作台任务中心界面" />
+            <figcaption><span>01 / TASK CENTER</span><span>WINDOWS 10/11 · X64</span></figcaption>
+          </figure>
+
+          <div className="project-copy">
+            <div className="project-mark"><strong>Y</strong><span>YUNQUE STUDIO</span></div>
+            <h3>从批量提示词到可下载结果，集中在一个桌面工作台。</h3>
+            <p>使用 Playwright 驱动持久浏览器会话，完成登录检查、参数填写、素材上传、任务提交与结果提取；素材库、分镜、收藏和创作画布则负责整理整个内容生产过程。</p>
+
+            <div className="project-stack" aria-label="技术栈">
+              <span>Electron</span><span>React</span><span>Flask</span><span>SQLite</span><span>Playwright</span>
+            </div>
+
+            <dl className="project-proof">
+              <div><dt>174</dt><dd>兼容接口</dd></div>
+              <div><dt>09</dt><dd>自动测试</dd></div>
+              <div><dt>02</dt><dd>创作平台</dd></div>
+            </dl>
+
+            <div className="project-actions">
+              <a className="project-action primary" href={yunqueReleaseUrl} target="_blank" rel="noreferrer">下载 Windows 版 <DownloadIcon /></a>
+              <a className="project-action secondary" href={yunqueRepositoryUrl} target="_blank" rel="noreferrer">查看源码 <Arrow /></a>
+            </div>
+            <small className="project-release">V1.0.0 · MIT LICENSE · SHA256 VERIFIED</small>
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -913,7 +972,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const ids = ["hero", "shelf", "map", "notes", "method", "about"];
+    const ids = ["hero", "shelf", "project-yunque", "map", "notes", "method", "about"];
     let frame = 0;
     const updateSection = () => {
       frame = 0;
@@ -941,6 +1000,9 @@ export default function App() {
   useEffect(() => {
     const selector = [
       ".section-title",
+      ".featured-project-inner",
+      ".project-shot",
+      ".project-copy",
       ".explorer-bar",
       ".filter-row",
       ".note-card-shell",
@@ -989,6 +1051,7 @@ export default function App() {
       <main>
         <Hero />
         <ContentShelf onOpen={setActiveCollection} isActive={activeSection === "shelf"} />
+        <FeaturedProject />
         <KnowledgeMap onSelect={selectBranch} isActive={activeSection === "map"} />
         <NotesExplorer selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory} onOpen={setActiveNote} searchRef={searchRef} />
         <Method />
